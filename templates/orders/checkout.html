@@ -1,0 +1,234 @@
+{% extends 'base.html' %}
+
+{% block title %}Checkout - Flipkart Clone{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="row">
+        <div class="col-12">
+            <h2 class="mb-4">Checkout</h2>
+        </div>
+    </div>
+    
+    {% if cart_items %}
+        <form action="{% url 'place_order' %}" method="post">
+            {% csrf_token %}
+            <div class="row">
+                <!-- Checkout Form -->
+                <div class="col-md-8">
+                    <!-- Delivery Address Section -->
+                    <div class="card mb-4">
+                        <div class="card-header bg-primary text-white">
+                            <h5 class="mb-0">Delivery Address</h5>
+                        </div>
+                        <div class="card-body">
+                            {% if addresses %}
+                                <div class="mb-3">
+                                    {% for address in addresses %}
+                                        <div class="form-check mb-3">
+                                            <input class="form-check-input" type="radio" name="address" id="address-{{ address.id }}" value="{{ address.id }}" {% if address.is_default %}checked{% endif %} required>
+                                            <label class="form-check-label" for="address-{{ address.id }}">
+                                                <div class="d-flex align-items-start">
+                                                    <div>
+                                                        <strong>{{ address.address_line1 }}</strong>
+                                                        {% if address.address_line2 %}<br>{{ address.address_line2 }}{% endif %}
+                                                        <br>{{ address.city }}, {{ address.state }} - {{ address.pincode }}
+                                                        <br>{{ address.country }}
+                                                        {% if address.is_default %}<span class="badge bg-primary ms-2">Default</span>{% endif %}
+                                                    </div>
+                                                </div>
+                                            </label>
+                                        </div>
+                                    {% endfor %}
+                                </div>
+                                <a href="{% url 'add_address' %}" class="btn btn-outline-primary">
+                                    <i class="fas fa-plus-circle me-1"></i> Add New Address
+                                </a>
+                            {% else %}
+                                <div class="alert alert-warning">
+                                    <i class="fas fa-exclamation-triangle me-2"></i>
+                                    You don't have any saved addresses. Please add one to continue.
+                                </div>
+                                <a href="{% url 'add_address' %}" class="btn btn-primary">
+                                    <i class="fas fa-plus-circle me-1"></i> Add New Address
+                                </a>
+                            {% endif %}
+                        </div>
+                    </div>
+                    
+                    <!-- Order Items Section -->
+                    <div class="card mb-4">
+                        <div class="card-header bg-primary text-white">
+                            <h5 class="mb-0">Order Items ({{ cart.total_items }})</h5>
+                        </div>
+                        <div class="card-body">
+                            <div class="table-responsive">
+                                <table class="table">
+                                    <thead>
+                                        <tr>
+                                            <th>Product</th>
+                                            <th>Price</th>
+                                            <th>Quantity</th>
+                                            <th>Total</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {% for item in cart_items %}
+                                            <tr>
+                                                <td>
+                                                    <div class="d-flex align-items-center">
+                                                        {% if item.product.images.exists %}
+                                                            {% with item.product.images.first as image %}
+                                                                <img src="{{ image.image.url }}" alt="{{ item.product.title }}" class="img-thumbnail me-3" style="width: 50px; height: 50px; object-fit: contain;">
+                                                            {% endwith %}
+                                                        {% else %}
+                                                            <div class="bg-light me-3" style="width: 50px; height: 50px; display: flex; align-items: center; justify-content: center;">
+                                                                <i class="fas fa-image text-secondary"></i>
+                                                            </div>
+                                                        {% endif %}
+                                                        <div>
+                                                            <h6 class="mb-0">{{ item.product.title }}</h6>
+                                                            <small class="text-muted">{{ item.product.brand.name }}</small>
+                                                        </div>
+                                                    </div>
+                                                </td>
+                                                <td>₹{{ item.product.current_price }}</td>
+                                                <td>{{ item.quantity }}</td>
+                                                <td>₹{{ item.item_total }}</td>
+                                            </tr>
+                                        {% endfor %}
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Payment Section -->
+                    <div class="card mb-4">
+                        <div class="card-header bg-primary text-white">
+                            <h5 class="mb-0">Payment Method</h5>
+                        </div>
+                        <div class="card-body">
+                            <div class="form-check mb-3">
+                                <input class="form-check-input" type="radio" name="payment_method" id="cod" value="cod" checked required>
+                                <label class="form-check-label" for="cod">
+                                    <div class="d-flex align-items-center">
+                                        <i class="fas fa-money-bill-wave fa-lg me-2 text-success"></i>
+                                        <div>
+                                            <strong>Cash on Delivery</strong>
+                                            <div class="text-muted small">Pay when your order is delivered</div>
+                                        </div>
+                                    </div>
+                                </label>
+                            </div>
+                            <div class="form-check mb-3">
+                                <input class="form-check-input" type="radio" name="payment_method" id="upi" value="upi" required>
+                                <label class="form-check-label" for="upi">
+                                    <div class="d-flex align-items-center">
+                                        <i class="fas fa-mobile-alt fa-lg me-2 text-primary"></i>
+                                        <div>
+                                            <strong>UPI</strong>
+                                            <div class="text-muted small">Pay using UPI apps like Google Pay, PhonePe, etc.</div>
+                                        </div>
+                                    </div>
+                                </label>
+                            </div>
+                            <div class="form-check mb-3">
+                                <input class="form-check-input" type="radio" name="payment_method" id="card" value="card" required>
+                                <label class="form-check-label" for="card">
+                                    <div class="d-flex align-items-center">
+                                        <i class="far fa-credit-card fa-lg me-2 text-danger"></i>
+                                        <div>
+                                            <strong>Credit/Debit Card</strong>
+                                            <div class="text-muted small">Pay securely using your credit or debit card</div>
+                                        </div>
+                                    </div>
+                                </label>
+                            </div>
+                            <div class="form-check mb-3">
+                                <input class="form-check-input" type="radio" name="payment_method" id="net_banking" value="net_banking" required>
+                                <label class="form-check-label" for="net_banking">
+                                    <div class="d-flex align-items-center">
+                                        <i class="fas fa-university fa-lg me-2 text-warning"></i>
+                                        <div>
+                                            <strong>Net Banking</strong>
+                                            <div class="text-muted small">Pay using your internet banking account</div>
+                                        </div>
+                                    </div>
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Order Notes -->
+                    <div class="card mb-4">
+                        <div class="card-header bg-primary text-white">
+                            <h5 class="mb-0">Order Notes (Optional)</h5>
+                        </div>
+                        <div class="card-body">
+                            <div class="mb-3">
+                                <textarea class="form-control" name="order_notes" rows="3" placeholder="Add any special instructions for delivery"></textarea>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Order Summary -->
+                <div class="col-md-4">
+                    <div class="card">
+                        <div class="card-header bg-primary text-white">
+                            <h5 class="mb-0">Order Summary</h5>
+                        </div>
+                        <div class="card-body">
+                            <div class="d-flex justify-content-between mb-2">
+                                <span>Subtotal ({{ cart.total_items }} items)</span>
+                                <span>₹{{ subtotal }}</span>
+                            </div>
+                            <div class="d-flex justify-content-between mb-2">
+                                <span>Delivery Fee</span>
+                                {% if delivery_fee > 0 %}
+                                    <span>₹{{ delivery_fee }}</span>
+                                {% else %}
+                                    <span class="text-success">FREE</span>
+                                {% endif %}
+                            </div>
+                            {% if discount > 0 %}
+                                <div class="d-flex justify-content-between mb-2 text-success">
+                                    <span>Discount ({{ coupon.code }})</span>
+                                    <span>-₹{{ discount }}</span>
+                                </div>
+                            {% endif %}
+                            <hr>
+                            <div class="d-flex justify-content-between mb-3">
+                                <strong>Total Amount</strong>
+                                <strong>₹{{ total }}</strong>
+                            </div>
+                            
+                            <!-- Place Order Button -->
+                            <button type="submit" class="btn btn-primary w-100 mb-3" {% if not addresses %}disabled{% endif %}>
+                                <i class="fas fa-check-circle me-1"></i> Place Order
+                            </button>
+                            
+                            <div class="alert alert-info small mb-0">
+                                <i class="fas fa-info-circle me-1"></i>
+                                By placing your order, you agree to our <a href="#" class="alert-link">Terms and Conditions</a> and <a href="#" class="alert-link">Privacy Policy</a>.
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </form>
+    {% else %}
+        <div class="card p-5 text-center">
+            <div class="mb-4">
+                <i class="fas fa-shopping-cart fa-4x text-secondary"></i>
+            </div>
+            <h3>Your cart is empty</h3>
+            <p class="text-muted">You need to add items to your cart before checkout.</p>
+            <a href="{% url 'home' %}" class="btn btn-primary mt-3">
+                <i class="fas fa-shopping-bag me-2"></i> Start Shopping
+            </a>
+        </div>
+    {% endif %}
+</div>
+{% endblock %}

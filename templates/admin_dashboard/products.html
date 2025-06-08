@@ -1,0 +1,161 @@
+{% extends 'admin_dashboard/base_admin.html' %}
+
+{% block admin_content %}
+<div class="container-fluid">
+    <!-- Header -->
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h3>Products Management</h3>
+        <div>
+            <a href="{% url 'add_product' %}" class="btn btn-primary">
+                <i class="fas fa-plus me-2"></i> Add Product
+            </a>
+            <div class="btn-group ms-2">
+                <a href="{% url 'add_category' %}" class="btn btn-outline-secondary">Add Category</a>
+                <a href="{% url 'add_subcategory' %}" class="btn btn-outline-secondary">Add Subcategory</a>
+                <a href="{% url 'add_brand' %}" class="btn btn-outline-secondary">Add Brand</a>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Filter Section -->
+    <div class="card filter-card mb-4">
+        <div class="card-header">
+            <h5 class="mb-0">Filter Products</h5>
+        </div>
+        <div class="card-body">
+            <form method="get" action="{% url 'admin_products' %}">
+                <div class="row">
+                    <div class="col-md-3 mb-3">
+                        <label for="category" class="form-label">Category</label>
+                        <select name="category" id="category" class="form-select">
+                            <option value="">All Categories</option>
+                            {% for category in categories %}
+                            <option value="{{ category.id }}" {% if selected_category == category.id|stringformat:"i" %}selected{% endif %}>
+                                {{ category.name }}
+                            </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="col-md-3 mb-3">
+                        <label for="brand" class="form-label">Brand</label>
+                        <select name="brand" id="brand" class="form-select">
+                            <option value="">All Brands</option>
+                            {% for brand in brands %}
+                            <option value="{{ brand.id }}" {% if selected_brand == brand.id|stringformat:"i" %}selected{% endif %}>
+                                {{ brand.name }}
+                            </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="col-md-3 mb-3">
+                        <label for="stock" class="form-label">Stock Status</label>
+                        <select name="stock" id="stock" class="form-select">
+                            <option value="">All</option>
+                            <option value="in_stock" {% if stock_status == 'in_stock' %}selected{% endif %}>In Stock</option>
+                            <option value="out_of_stock" {% if stock_status == 'out_of_stock' %}selected{% endif %}>Out of Stock</option>
+                        </select>
+                    </div>
+                    <div class="col-md-3 mb-3">
+                        <label for="q" class="form-label">Search</label>
+                        <input type="text" name="q" id="q" class="form-control" placeholder="Search products..." value="{{ query }}">
+                    </div>
+                </div>
+                <div class="row">
+                    <div class="col-12 d-flex justify-content-end">
+                        <a href="{% url 'admin_products' %}" class="btn btn-outline-secondary me-2">Reset</a>
+                        <button type="submit" class="btn btn-primary">Filter</button>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+    
+    <!-- Products Table -->
+    <div class="card admin-card">
+        <div class="card-header d-flex justify-content-between align-items-center">
+            <h5 class="mb-0">Product List</h5>
+            <span class="badge bg-primary">{{ products.count }} products</span>
+        </div>
+        <div class="card-body p-0">
+            <div class="table-responsive">
+                <table class="table table-hover admin-table mb-0">
+                    <thead>
+                        <tr>
+                            <th>ID</th>
+                            <th>Image</th>
+                            <th>Title</th>
+                            <th>Category</th>
+                            <th>Brand</th>
+                            <th>Price (₹)</th>
+                            <th>Stock</th>
+                            <th>Status</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for product in products %}
+                        <tr>
+                            <td>{{ product.id }}</td>
+                            <td>
+                                {% if product.images.exists %}
+                                <img src="{{ product.images.first.image.url }}" alt="{{ product.title }}" width="50">
+                                {% else %}
+                                <div class="bg-light text-center" style="width: 50px; height: 50px; line-height: 50px;">
+                                    <i class="fas fa-image text-muted"></i>
+                                </div>
+                                {% endif %}
+                            </td>
+                            <td>{{ product.title|truncatechars:30 }}</td>
+                            <td>{{ product.category.name }}</td>
+                            <td>{{ product.brand.name|default:'-' }}</td>
+                            <td>
+                                {% if product.discount_price %}
+                                <span class="text-decoration-line-through text-muted">₹{{ product.price }}</span>
+                                <span class="fw-bold">₹{{ product.discount_price }}</span>
+                                {% else %}
+                                <span>₹{{ product.price }}</span>
+                                {% endif %}
+                            </td>
+                            <td>{{ product.stock }}</td>
+                            <td>
+                                {% if product.is_available %}
+                                <span class="badge bg-success">Active</span>
+                                {% else %}
+                                <span class="badge bg-danger">Inactive</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                <div class="btn-group">
+                                    <a href="{% url 'edit_product' product.id %}" class="btn btn-sm btn-outline-primary">
+                                        <i class="fas fa-edit"></i>
+                                    </a>
+                                    <a href="{% url 'delete_product' product.id %}" class="btn btn-sm btn-outline-danger">
+                                        <i class="fas fa-trash"></i>
+                                    </a>
+                                    <a href="{% url 'product_detail' product.slug %}" class="btn btn-sm btn-outline-info">
+                                        <i class="fas fa-eye"></i>
+                                    </a>
+                                </div>
+                            </td>
+                        </tr>
+                        {% empty %}
+                        <tr>
+                            <td colspan="9" class="text-center py-4">
+                                <div class="d-flex flex-column align-items-center">
+                                    <i class="fas fa-box-open fa-3x text-muted mb-3"></i>
+                                    <h5>No products found</h5>
+                                    <p class="text-muted">Try adjusting your search or filter to find what you're looking for.</p>
+                                    <a href="{% url 'add_product' %}" class="btn btn-primary mt-2">
+                                        <i class="fas fa-plus me-2"></i> Add New Product
+                                    </a>
+                                </div>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

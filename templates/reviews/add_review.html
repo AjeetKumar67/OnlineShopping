@@ -1,0 +1,271 @@
+{% extends 'base.html' %}
+
+{% block title %}{% if is_edit %}Edit{% else %}Add{% endif %} Review - {{ product.title }} | Flipkart Clone{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+    <div class="row">
+        <div class="col-md-8 mx-auto">
+            <nav aria-label="breadcrumb">
+                <ol class="breadcrumb">
+                    <li class="breadcrumb-item"><a href="{% url 'home' %}">Home</a></li>
+                    <li class="breadcrumb-item"><a href="{% url 'product_detail' product.slug %}">{{ product.title }}</a></li>
+                    <li class="breadcrumb-item active">{% if is_edit %}Edit{% else %}Add{% endif %} Review</li>
+                </ol>
+            </nav>
+            
+            <div class="card">
+                <div class="card-header bg-primary text-white">
+                    <h4 class="mb-0">{% if is_edit %}Edit{% else %}Write{% endif %} a Review</h4>
+                </div>
+                <div class="card-body">
+                    <div class="row mb-4">
+                        <div class="col-md-3">
+                            {% if product.images.exists %}
+                                <img src="{{ product.images.first.image.url }}" alt="{{ product.title }}" class="img-fluid">
+                            {% else %}
+                                <div class="bg-light text-center p-3">
+                                    <i class="fas fa-image fa-3x text-secondary"></i>
+                                </div>
+                            {% endif %}
+                        </div>
+                        <div class="col-md-9">
+                            <h5>{{ product.title }}</h5>
+                            <div class="text-muted mb-2">{{ product.brand.name }}</div>
+                            <div class="fw-bold">₹{{ product.current_price }}</div>
+                            
+                            {% if has_purchased %}
+                                <div class="mt-2">
+                                    <span class="badge bg-success">Verified Purchase</span>
+                                    <small class="text-muted ms-2">Your review will be marked as a verified purchase</small>
+                                </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                    
+                    <form method="post" enctype="multipart/form-data">
+                        {% csrf_token %}
+                        
+                        {% if form.non_field_errors %}
+                            <div class="alert alert-danger">
+                                {% for error in form.non_field_errors %}
+                                    {{ error }}
+                                {% endfor %}
+                            </div>
+                        {% endif %}
+                        
+                        <div class="mb-3">
+                            <label for="{{ form.rating.id_for_label }}" class="form-label">Overall Rating</label>
+                            <div class="d-flex align-items-center">
+                                <div class="star-rating me-3">
+                                    <div class="rating-selection">
+                                        {% for value, text in form.rating.field.choices %}
+                                            <input type="radio" id="star{{ value }}" name="{{ form.rating.name }}" value="{{ value }}" 
+                                                {% if form.rating.value|stringformat:'s' == value|stringformat:'s' %}checked{% endif %}>
+                                            <label for="star{{ value }}" title="{{ text }}">{{ value }}</label>
+                                        {% endfor %}
+                                    </div>
+                                </div>
+                                <div class="rating-text">Select a rating</div>
+                            </div>
+                            {% if form.rating.errors %}
+                                <div class="invalid-feedback d-block">
+                                    {% for error in form.rating.errors %}
+                                        {{ error }}
+                                    {% endfor %}
+                                </div>
+                            {% endif %}
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label for="{{ form.title.id_for_label }}" class="form-label">Review Title</label>
+                            {{ form.title }}
+                            {% if form.title.errors %}
+                                <div class="invalid-feedback d-block">
+                                    {% for error in form.title.errors %}
+                                        {{ error }}
+                                    {% endfor %}
+                                </div>
+                            {% endif %}
+                            <div class="form-text">Summarize your experience in a short headline</div>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label for="{{ form.comment.id_for_label }}" class="form-label">Review</label>
+                            {{ form.comment }}
+                            {% if form.comment.errors %}
+                                <div class="invalid-feedback d-block">
+                                    {% for error in form.comment.errors %}
+                                        {{ error }}
+                                    {% endfor %}
+                                </div>
+                            {% endif %}
+                            <div class="form-text">Share your thoughts about the product to help other shoppers</div>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label for="{{ form.images.id_for_label }}" class="form-label">Add Photos (Optional)</label>
+                            {{ form.images }}
+                            {% if form.images.errors %}
+                                <div class="invalid-feedback d-block">
+                                    {% for error in form.images.errors %}
+                                        {{ error }}
+                                    {% endfor %}
+                                </div>
+                            {% endif %}
+                            <div class="form-text">Add up to 5 photos to help other customers (Max size: 5MB each)</div>
+                        </div>
+                        
+                        {% if review and review.images.exists %}
+                            <div class="mb-3">
+                                <label class="form-label">Current Photos</label>
+                                <div class="d-flex flex-wrap gap-2">
+                                    {% for image in review.images.all %}
+                                        <div class="position-relative review-image-preview">
+                                            <img src="{{ image.image.url }}" alt="Review Image" class="img-thumbnail" style="width: 100px; height: 100px; object-fit: cover;">
+                                            <a href="#" class="delete-image position-absolute top-0 end-0 bg-danger text-white rounded-circle" 
+                                               data-image-id="{{ image.id }}" title="Remove image">
+                                                <i class="fas fa-times p-1"></i>
+                                            </a>
+                                        </div>
+                                    {% endfor %}
+                                </div>
+                            </div>
+                        {% endif %}
+                        
+                        <div class="d-flex justify-content-between mt-4">
+                            <a href="{% url 'product_detail' product.slug %}" class="btn btn-outline-secondary">Cancel</a>
+                            <button type="submit" class="btn btn-primary">
+                                {% if is_edit %}Update{% else %}Submit{% endif %} Review
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_css %}
+<style>
+    .star-rating {
+        position: relative;
+        display: inline-block;
+    }
+    
+    .rating-selection {
+        display: flex;
+        flex-direction: row-reverse;
+        font-size: 24px;
+    }
+    
+    .rating-selection input {
+        display: none;
+    }
+    
+    .rating-selection label {
+        cursor: pointer;
+        margin: 0 2px;
+        color: #ccc;
+    }
+    
+    .rating-selection label:before {
+        content: "★";
+    }
+    
+    .rating-selection input:checked ~ label {
+        color: #ffc107;
+    }
+    
+    .rating-selection label:hover,
+    .rating-selection label:hover ~ label {
+        color: #ffdb70;
+    }
+    
+    .delete-image {
+        font-size: 12px;
+        width: 20px;
+        height: 20px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+</style>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    $(document).ready(function() {
+        // Show preview of uploaded images
+        $('#{{ form.images.id_for_label }}').on('change', function() {
+            const maxFiles = 5;
+            const maxSize = 5 * 1024 * 1024; // 5MB
+            
+            if (this.files.length > maxFiles) {
+                alert(`You can upload a maximum of ${maxFiles} images`);
+                this.value = '';
+                return;
+            }
+            
+            for (let i = 0; i < this.files.length; i++) {
+                if (this.files[i].size > maxSize) {
+                    alert(`File "${this.files[i].name}" exceeds the maximum size of 5MB`);
+                    this.value = '';
+                    return;
+                }
+            }
+        });
+        
+        // Rating stars hover text
+        $('.rating-selection label').hover(function() {
+            $('.rating-text').text($(this).attr('title'));
+        }, function() {
+            if ($('.rating-selection input:checked').length) {
+                $('.rating-text').text($('.rating-selection input:checked').next('label').attr('title'));
+            } else {
+                $('.rating-text').text('Select a rating');
+            }
+        });
+        
+        // Rating stars click text
+        $('.rating-selection input').change(function() {
+            $('.rating-text').text($(this).next('label').attr('title'));
+        });
+        
+        // Show current rating text on page load
+        if ($('.rating-selection input:checked').length) {
+            $('.rating-text').text($('.rating-selection input:checked').next('label').attr('title'));
+        }
+        
+        // Delete existing image
+        $('.delete-image').click(function(e) {
+            e.preventDefault();
+            
+            if (confirm('Are you sure you want to remove this image?')) {
+                const imageId = $(this).data('image-id');
+                const $imageContainer = $(this).parent();
+                
+                $.ajax({
+                    url: "{% url 'delete_review_image' %}",
+                    type: "POST",
+                    data: {
+                        'image_id': imageId,
+                        'csrfmiddlewaretoken': "{{ csrf_token }}"
+                    },
+                    success: function(response) {
+                        if (response.status === 'success') {
+                            $imageContainer.remove();
+                        } else {
+                            alert(response.message);
+                        }
+                    },
+                    error: function() {
+                        alert('Error removing image. Please try again.');
+                    }
+                });
+            }
+        });
+    });
+</script>
+{% endblock %}

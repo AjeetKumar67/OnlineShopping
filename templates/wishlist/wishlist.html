@@ -1,0 +1,78 @@
+{% extends 'base.html' %}
+
+{% block title %}Your Wishlist - Flipkart Clone{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="row">
+        <div class="col-12">
+            <h2 class="mb-4">Your Wishlist</h2>
+        </div>
+    </div>
+    
+    {% if wishlist_items %}
+        <div class="row">
+            {% for item in wishlist_items %}
+                <div class="col-md-3 col-6 mb-4">
+                    <div class="card product-card h-100">
+                        <a href="{% url 'product_detail' item.product.slug %}" class="text-decoration-none">
+                            {% if item.product.images.exists %}
+                                {% with item.product.images.first as image %}
+                                    <img src="{{ image.image.url }}" class="card-img-top" alt="{{ item.product.title }}" style="height: 200px; object-fit: contain; padding: 10px;">
+                                {% endwith %}
+                            {% else %}
+                                <div class="bg-light" style="height: 200px; display: flex; align-items: center; justify-content: center;">
+                                    <i class="fas fa-image fa-3x text-secondary"></i>
+                                </div>
+                            {% endif %}
+                            <div class="card-body">
+                                <h5 class="card-title text-truncate">{{ item.product.title }}</h5>
+                                <div class="d-flex align-items-center mb-2">
+                                    <span class="product-rating me-1">{{ item.product.average_rating|floatformat:1 }} ★</span>
+                                    <small class="text-secondary">({{ item.product.reviews.count }})</small>
+                                </div>
+                                <div class="d-flex align-items-center">
+                                    <h6 class="mb-0 me-2">₹{{ item.product.current_price }}</h6>
+                                    {% if item.product.discount_price %}
+                                        <small class="text-secondary text-decoration-line-through">₹{{ item.product.price }}</small>
+                                        <span class="ms-2 discount-tag">{{ item.product.discount_percentage }}% off</span>
+                                    {% endif %}
+                                </div>
+                                
+                                <!-- Stock Status -->
+                                {% if item.product.stock > 0 %}
+                                    <span class="badge bg-success mt-2">In Stock</span>
+                                {% else %}
+                                    <span class="badge bg-danger mt-2">Out of Stock</span>
+                                {% endif %}
+                            </div>
+                        </a>
+                        <div class="card-footer bg-white d-flex justify-content-between">
+                            <form action="{% url 'move_to_cart' item.id %}" method="post">
+                                {% csrf_token %}
+                                <button type="submit" class="btn btn-sm btn-primary" {% if item.product.stock <= 0 %}disabled{% endif %}>
+                                    <i class="fas fa-shopping-cart me-1"></i> Move to Cart
+                                </button>
+                            </form>
+                            <a href="{% url 'remove_from_wishlist' item.id %}" class="btn btn-sm btn-outline-danger">
+                                <i class="fas fa-trash"></i>
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            {% endfor %}
+        </div>
+    {% else %}
+        <div class="card p-5 text-center">
+            <div class="mb-4">
+                <i class="far fa-heart fa-4x text-secondary"></i>
+            </div>
+            <h3>Your wishlist is empty</h3>
+            <p class="text-muted">Looks like you haven't added anything to your wishlist yet.</p>
+            <a href="{% url 'home' %}" class="btn btn-primary mt-3">
+                <i class="fas fa-shopping-bag me-2"></i> Start Shopping
+            </a>
+        </div>
+    {% endif %}
+</div>
+{% endblock %}

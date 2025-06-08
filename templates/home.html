@@ -1,0 +1,114 @@
+{% extends 'base.html' %}
+{% load static %}
+{% load product_extras %}
+
+{% block title %}Home | Online Shopping{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <!-- Hero Banner -->
+    <div class="jumbotron rounded bg-light p-4 mb-4">
+        <div class="row">
+            <div class="col-md-6">
+                <h1 class="display-4">Welcome to Our Online Store</h1>
+                <p class="lead">Discover amazing products at the best prices</p>
+                <hr class="my-4">
+                <p>Browse through our collection of trending items and exclusive deals</p>
+                <a class="btn btn-primary btn-lg" href="{% url 'product_search' %}" role="button">Shop Now</a>
+            </div>
+            <div class="col-md-6 text-right">
+                <img src="{% static 'images/banner.jpg' %}" alt="Shop Banner" class="img-fluid rounded" onerror="this.src='https://via.placeholder.com/600x300?text=Welcome+to+Our+Store'">
+            </div>
+        </div>
+    </div>
+
+    <!-- Featured Products -->
+    <section class="my-4">
+        <h2>Featured Products</h2>
+        <div class="row">
+            {% if featured_products %}
+                {% for product in featured_products %}
+                    <div class="col-md-3 mb-4">
+                        <div class="card h-100">
+                            {% with primary_img=product.images|primary_image %}
+                                {% if primary_img %}
+                                    <img src="{{ primary_img.image.url }}" class="card-img-top" alt="{{ product.name }}">
+                                {% else %}
+                                    <img src="{% static 'images/no-image.jpg' %}" class="card-img-top" alt="No Image">
+                                {% endif %}
+                            {% endwith %}
+                            <div class="card-body">
+                                <h5 class="card-title">{{ product.name }}</h5>
+                                <p class="card-text text-muted">{{ product.category.name }}</p>
+                                <p class="card-text font-weight-bold">${{ product.price }}</p>
+                                <a href="{% url 'product_detail' product.id %}" class="btn btn-primary">View Details</a>
+                            </div>
+                        </div>
+                    </div>
+                {% endfor %}
+            {% else %}
+                <div class="col-12">
+                    <p>No featured products available.</p>
+                </div>
+            {% endif %}
+        </div>
+    </section>
+    
+    <!-- New Arrivals -->
+    {% if new_arrivals %}
+    <h2 class="section-title mt-5">New Arrivals</h2>
+    <div class="row">
+        {% for product in new_arrivals %}
+        <div class="col-md-3 mb-4">
+            <div class="card h-100">
+                {% with primary_img=product.images|primary_image %}
+                    {% if primary_img %}
+                    <img src="{{ primary_img.image.url }}" class="card-img-top" alt="{{ product.title }}" style="height: 200px; object-fit: contain;">
+                    {% else %}
+                    <img src="https://via.placeholder.com/200" class="card-img-top" alt="{{ product.title }}" style="height: 200px; object-fit: contain;">
+                    {% endif %}
+                {% endwith %}
+                <div class="card-body">
+                    <h5 class="card-title">{{ product.title|truncatechars:40 }}</h5>
+                    <p class="card-text">
+                        {% if product.discount_price %}
+                        <span class="text-muted"><del>₹{{ product.price }}</del></span>
+                        <span class="text-danger font-weight-bold">₹{{ product.discount_price }}</span>
+                        <span class="badge badge-success">{{ product.discount_percentage }}% OFF</span>
+                        {% else %}
+                        <span class="font-weight-bold">₹{{ product.price }}</span>
+                        {% endif %}
+                    </p>
+                </div>
+                <div class="card-footer bg-white">
+                    <a href="{% url 'product_detail' product.slug %}" class="btn btn-sm btn-outline-primary">View Details</a>
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+    {% endif %}
+
+    <!-- Top Categories -->
+    {% if categories %}
+    <h2 class="section-title mt-5">Shop by Category</h2>
+    <div class="row">
+        {% for category in categories %}
+        <div class="col-md-2 mb-4">
+            <div class="card text-center h-100">
+                {% if category.image %}
+                <img src="{{ category.image.url }}" class="card-img-top mx-auto mt-2" alt="{{ category.name }}" style="height: 100px; width: 100px; object-fit: contain;">
+                {% else %}
+                <img src="https://via.placeholder.com/100" class="card-img-top mx-auto mt-2" alt="{{ category.name }}" style="height: 100px; width: 100px; object-fit: contain;">
+                {% endif %}
+                <div class="card-body">
+                    <h5 class="card-title">{{ category.name }}</h5>
+                    <a href="{% url 'category_products' category.slug %}" class="stretched-link"></a>
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

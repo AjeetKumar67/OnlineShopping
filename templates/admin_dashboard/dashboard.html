@@ -1,0 +1,221 @@
+{% extends 'admin_dashboard/base_admin.html' %}
+
+{% block admin_content %}
+<div class="container-fluid">
+    <!-- Header -->
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h3>Dashboard Overview</h3>
+        <div>
+            <button class="btn btn-primary">
+                <i class="fas fa-download me-2"></i> Download Report
+            </button>
+        </div>
+    </div>
+    
+    <!-- Statistics Cards -->
+    <div class="row mb-4">
+        <div class="col-md-6 col-lg-3 mb-3">
+            <div class="card admin-card stat-card h-100">
+                <div class="card-body d-flex justify-content-between align-items-center">
+                    <div>
+                        <h6 class="text-muted mb-1">Total Revenue</h6>
+                        <h4 class="mb-0">₹{{ total_revenue|floatformat:2 }}</h4>
+                        <small class="text-success">
+                            <i class="fas fa-arrow-up me-1"></i> ₹{{ monthly_revenue|floatformat:2 }} this month
+                        </small>
+                    </div>
+                    <i class="fas fa-rupee-sign"></i>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-md-6 col-lg-3 mb-3">
+            <div class="card admin-card orders-card h-100">
+                <div class="card-body d-flex justify-content-between align-items-center">
+                    <div>
+                        <h6 class="text-muted mb-1">Total Orders</h6>
+                        <h4 class="mb-0">{{ total_orders }}</h4>
+                        <small class="text-success">
+                            <i class="fas fa-arrow-up me-1"></i> {{ recent_orders }} today
+                        </small>
+                    </div>
+                    <i class="fas fa-shopping-cart"></i>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-md-6 col-lg-3 mb-3">
+            <div class="card admin-card products-card h-100">
+                <div class="card-body d-flex justify-content-between align-items-center">
+                    <div>
+                        <h6 class="text-muted mb-1">Total Products</h6>
+                        <h4 class="mb-0">{{ total_products }}</h4>
+                        <small class="text-danger">
+                            <i class="fas fa-exclamation-circle me-1"></i> {{ out_of_stock_products }} out of stock
+                        </small>
+                    </div>
+                    <i class="fas fa-box"></i>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-md-6 col-lg-3 mb-3">
+            <div class="card admin-card users-card h-100">
+                <div class="card-body d-flex justify-content-between align-items-center">
+                    <div>
+                        <h6 class="text-muted mb-1">Total Users</h6>
+                        <h4 class="mb-0">{{ total_users }}</h4>
+                        <small class="text-success">
+                            <i class="fas fa-arrow-up me-1"></i> {{ new_users }} new this month
+                        </small>
+                    </div>
+                    <i class="fas fa-users"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="row mb-4">
+        <!-- Orders Chart -->
+        <div class="col-lg-8 mb-4">
+            <div class="card admin-card h-100">
+                <div class="card-header">
+                    <h5 class="mb-0">Orders Overview (Last 7 Days)</h5>
+                </div>
+                <div class="card-body">
+                    <canvas id="ordersChart" height="300"></canvas>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Top Products -->
+        <div class="col-lg-4 mb-4">
+            <div class="card admin-card h-100">
+                <div class="card-header">
+                    <h5 class="mb-0">Top Selling Products</h5>
+                </div>
+                <div class="card-body p-0">
+                    <ul class="list-group list-group-flush">
+                        {% for product in top_products %}
+                        <li class="list-group-item d-flex justify-content-between align-items-center">
+                            <span>{{ product.product__title|truncatechars:30 }}</span>
+                            <span class="badge bg-primary rounded-pill">{{ product.total_quantity }}</span>
+                        </li>
+                        {% empty %}
+                        <li class="list-group-item text-center">No data available</li>
+                        {% endfor %}
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Recent Orders -->
+    <div class="row">
+        <div class="col-12">
+            <div class="card admin-card">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0">Recent Orders</h5>
+                    <a href="{% url 'admin_orders' %}" class="btn btn-sm btn-outline-primary">View All</a>
+                </div>
+                <div class="card-body p-0">
+                    <div class="table-responsive">
+                        <table class="table table-hover admin-table mb-0">
+                            <thead>
+                                <tr>
+                                    <th>Order ID</th>
+                                    <th>Customer</th>
+                                    <th>Date</th>
+                                    <th>Status</th>
+                                    <th>Amount</th>
+                                    <th>Action</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for order in recent_orders_list %}
+                                <tr>
+                                    <td>#{{ order.order_id }}</td>
+                                    <td>{{ order.user.username }}</td>
+                                    <td>{{ order.created_at|date:"d M Y, h:i A" }}</td>
+                                    <td>
+                                        {% if order.status == 'pending' %}
+                                        <span class="badge bg-warning">Pending</span>
+                                        {% elif order.status == 'processing' %}
+                                        <span class="badge bg-info">Processing</span>
+                                        {% elif order.status == 'shipped' %}
+                                        <span class="badge bg-primary">Shipped</span>
+                                        {% elif order.status == 'delivered' %}
+                                        <span class="badge bg-success">Delivered</span>
+                                        {% elif order.status == 'cancelled' %}
+                                        <span class="badge bg-danger">Cancelled</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>₹{{ order.total_amount|floatformat:2 }}</td>
+                                    <td>
+                                        <a href="{% url 'admin_order_detail' order.id %}" class="btn btn-sm btn-outline-primary">View</a>
+                                    </td>
+                                </tr>
+                                {% empty %}
+                                <tr>
+                                    <td colspan="6" class="text-center">No recent orders</td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block admin_js %}
+<script>
+    // Orders Chart
+    const ordersCtx = document.getElementById('ordersChart').getContext('2d');
+    const ordersChart = new Chart(ordersCtx, {
+        type: 'line',
+        data: {
+            labels: [
+                {% for data in orders_by_day reversed %}
+                '{{ data.date }}',
+                {% endfor %}
+            ],
+            datasets: [{
+                label: 'Orders',
+                data: [
+                    {% for data in orders_by_day reversed %}
+                    {{ data.count }},
+                    {% endfor %}
+                ],
+                backgroundColor: 'rgba(40, 116, 240, 0.2)',
+                borderColor: 'rgba(40, 116, 240, 1)',
+                borderWidth: 2,
+                tension: 0.4,
+                pointBackgroundColor: 'rgba(40, 116, 240, 1)',
+                pointBorderColor: '#fff',
+                pointBorderWidth: 2,
+                pointRadius: 4,
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    ticks: {
+                        precision: 0
+                    }
+                }
+            },
+            plugins: {
+                legend: {
+                    display: false
+                }
+            }
+        }
+    });
+</script>
+{% endblock %}

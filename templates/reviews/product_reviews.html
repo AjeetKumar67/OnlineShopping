@@ -1,0 +1,360 @@
+{% extends 'base.html' %}
+
+{% block title %}Reviews for {{ product.title }} | Flipkart Clone{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+    <div class="row">
+        <div class="col-12">
+            <nav aria-label="breadcrumb">
+                <ol class="breadcrumb">
+                    <li class="breadcrumb-item"><a href="{% url 'home' %}">Home</a></li>
+                    <li class="breadcrumb-item"><a href="{% url 'product_detail' product.slug %}">{{ product.title }}</a></li>
+                    <li class="breadcrumb-item active">Customer Reviews</li>
+                </ol>
+            </nav>
+        </div>
+    </div>
+    
+    <div class="row">
+        <!-- Product and Review Summary -->
+        <div class="col-md-3 mb-4">
+            <div class="card mb-4">
+                <div class="card-body">
+                    <div class="text-center mb-3">
+                        {% if product.images.exists %}
+                            <img src="{{ product.images.first.image.url }}" alt="{{ product.title }}" class="img-fluid mb-2" style="max-height: 150px; object-fit: contain;">
+                        {% endif %}
+                        <h5 class="card-title mb-0">{{ product.title }}</h5>
+                        <div class="text-muted small mb-2">{{ product.brand.name }}</div>
+                        <div class="mb-2">
+                            <strong>₹{{ product.current_price }}</strong>
+                            {% if product.discount_price %}
+                                <small class="text-muted text-decoration-line-through">₹{{ product.price }}</small>
+                            {% endif %}
+                        </div>
+                        <a href="{% url 'product_detail' product.slug %}" class="btn btn-sm btn-outline-primary">View Product</a>
+                    </div>
+                    
+                    <hr>
+                    
+                    <h5 class="text-center mb-3">{{ product.average_rating|floatformat:1 }} <small class="text-muted">out of 5</small></h5>
+                    <div class="text-center mb-2">
+                        {% for i in "12345"|make_list %}
+                            {% if forloop.counter <= product.average_rating %}
+                                <i class="fas fa-star text-warning"></i>
+                            {% elif forloop.counter <= product.average_rating|add:"0.5" %}
+                                <i class="fas fa-star-half-alt text-warning"></i>
+                            {% else %}
+                                <i class="far fa-star text-warning"></i>
+                            {% endif %}
+                        {% endfor %}
+                    </div>
+                    <p class="text-center mb-3">{{ review_count }} ratings</p>
+                    
+                    <!-- Rating Distribution -->
+                    <div class="rating-distribution">
+                        {% for i in "54321"|make_list %}
+                            {% with count=product.reviews.all|dictsortreversed:"rating"|filter_reviews:i %}
+                            <div class="d-flex align-items-center mb-2">
+                                <a href="?rating={{ i }}" class="text-decoration-none d-flex align-items-center flex-grow-1">
+                                    <div style="width: 30px;">{{ i }} ★</div>
+                                    <div class="progress flex-grow-1" style="height: 8px;">
+                                        {% with percentage=count|percentage:product.reviews.count %}
+                                        <div class="progress-bar bg-success" role="progressbar" style="width: {{ percentage }}%;" aria-valuenow="{{ percentage }}" aria-valuemin="0" aria-valuemax="100"></div>
+                                        {% endwith %}
+                                    </div>
+                                    <div style="width: 30px; text-align: right;">{{ count }}</div>
+                                </a>
+                            </div>
+                            {% endwith %}
+                        {% endfor %}
+                    </div>
+                    
+                    {% if user.is_authenticated %}
+                        <div class="text-center mt-4">
+                            <a href="{% url 'add_review' product.id %}" class="btn btn-primary">
+                                <i class="fas fa-star me-1"></i> Write a Review
+                            </a>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+            
+            <!-- Filters -->
+            <div class="card">
+                <div class="card-header bg-light">
+                    <h5 class="mb-0">Filter Reviews</h5>
+                </div>
+                <div class="card-body">
+                    <form method="get" id="filter-form">
+                        <!-- Preserve existing non-filter parameters -->
+                        {% for key, value in filter_params.items %}
+                            {% if key != 'page' and key != 'rating' and key != 'verified' and key != 'with_images' and key != 'sort' %}
+                                <input type="hidden" name="{{ key }}" value="{{ value }}">
+                            {% endif %}
+                        {% endfor %}
+                        
+                        <div class="mb-3">
+                            <label class="form-label">Review Type</label>
+                            <div class="form-check">
+                                <input class="form-check-input filter-checkbox" type="checkbox" id="verified-purchase" name="verified" value="1" 
+                                       {% if filter_params.verified == '1' %}checked{% endif %}>
+                                <label class="form-check-label" for="verified-purchase">
+                                    Verified Purchases
+                                </label>
+                            </div>
+                            <div class="form-check">
+                                <input class="form-check-input filter-checkbox" type="checkbox" id="with-images" name="with_images" value="1" 
+                                       {% if filter_params.with_images == '1' %}checked{% endif %}>
+                                <label class="form-check-label" for="with-images">
+                                    With Images
+                                </label>
+                            </div>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label class="form-label">Rating</label>
+                            <select class="form-select filter-select" name="rating">
+                                <option value="">All ratings</option>
+                                {% for i in "54321"|make_list %}
+                                    <option value="{{ i }}" {% if filter_params.rating == i %}selected{% endif %}>{{ i }} star</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label class="form-label">Sort By</label>
+                            <select class="form-select filter-select" name="sort">
+                                <option value="recent" {% if filter_params.sort == 'recent' or not filter_params.sort %}selected{% endif %}>Most Recent</option>
+                                <option value="helpful" {% if filter_params.sort == 'helpful' %}selected{% endif %}>Most Helpful</option>
+                                <option value="high_rating" {% if filter_params.sort == 'high_rating' %}selected{% endif %}>Highest Rating</option>
+                                <option value="low_rating" {% if filter_params.sort == 'low_rating' %}selected{% endif %}>Lowest Rating</option>
+                            </select>
+                        </div>
+                        
+                        <button type="submit" class="btn btn-primary w-100">Apply Filters</button>
+                        
+                        {% if filter_params.rating or filter_params.verified or filter_params.with_images or filter_params.sort %}
+                            <a href="{% url 'product_reviews' product.slug %}" class="btn btn-outline-secondary w-100 mt-2">Clear Filters</a>
+                        {% endif %}
+                    </form>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Reviews List -->
+        <div class="col-md-9">
+            <div class="card">
+                <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center">
+                    <h4 class="mb-0">Customer Reviews ({{ review_count }})</h4>
+                    {% if filter_params.rating or filter_params.verified or filter_params.with_images %}
+                        <span class="badge bg-light text-dark">Filtered</span>
+                    {% endif %}
+                </div>
+                <div class="card-body">
+                    {% if page_obj %}
+                        {% for review in page_obj %}
+                            <div class="review-item mb-4 pb-4 {% if not forloop.last %}border-bottom{% endif %}">
+                                <div class="d-flex justify-content-between align-items-start mb-2">
+                                    <div>
+                                        <div class="mb-1">
+                                            {% for i in "12345"|make_list %}
+                                                {% if forloop.counter <= review.rating %}
+                                                    <i class="fas fa-star text-warning"></i>
+                                                {% else %}
+                                                    <i class="far fa-star text-warning"></i>
+                                                {% endif %}
+                                            {% endfor %}
+                                            <span class="ms-2 fw-bold">{{ review.title }}</span>
+                                        </div>
+                                        <div class="text-muted small">
+                                            By {{ review.user.get_full_name|default:review.user.username }} 
+                                            on {{ review.created_at|date:"d M Y" }}
+                                            {% if review.is_verified_purchase %}
+                                                <span class="badge bg-success ms-1">Verified Purchase</span>
+                                            {% endif %}
+                                        </div>
+                                    </div>
+                                    
+                                    {% if user.is_authenticated and review.user == user %}
+                                        <div class="dropdown">
+                                            <button class="btn btn-sm btn-outline-secondary dropdown-toggle" type="button" id="reviewOptions{{ review.id }}" data-bs-toggle="dropdown" aria-expanded="false">
+                                                <i class="fas fa-ellipsis-v"></i>
+                                            </button>
+                                            <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="reviewOptions{{ review.id }}">
+                                                <li><a class="dropdown-item" href="{% url 'edit_review' review.id %}">Edit</a></li>
+                                                <li><a class="dropdown-item text-danger" href="{% url 'delete_review' review.id %}">Delete</a></li>
+                                            </ul>
+                                        </div>
+                                    {% endif %}
+                                </div>
+                                
+                                <p class="mb-3">{{ review.comment }}</p>
+                                
+                                <!-- Review Images -->
+                                {% if review.images.exists %}
+                                    <div class="review-images mb-3">
+                                        <div class="d-flex gap-2">
+                                            {% for image in review.images.all %}
+                                                <a href="{{ image.image.url }}" data-lightbox="review-{{ review.id }}" data-title="Review by {{ review.user.get_full_name|default:review.user.username }}">
+                                                    <img src="{{ image.image.url }}" alt="Review Image" class="img-thumbnail" style="width: 80px; height: 80px; object-fit: cover;">
+                                                </a>
+                                            {% endfor %}
+                                        </div>
+                                    </div>
+                                {% endif %}
+                                
+                                <!-- Review Votes -->
+                                <div class="d-flex align-items-center">
+                                    <div class="me-3">
+                                        <span class="text-muted small">Was this review helpful?</span>
+                                    </div>
+                                    <div class="d-flex">
+                                        <button class="btn btn-sm btn-outline-secondary me-2 vote-btn {% if user_votes|get_item:review.id == 'upvote' %}active{% endif %}" 
+                                                data-review-id="{{ review.id }}" data-vote-type="upvote" {% if not user.is_authenticated or review.user == user %}disabled{% endif %}>
+                                            <i class="fas fa-thumbs-up me-1"></i> 
+                                            <span class="upvote-count">{{ review.votes.filter(vote='upvote').count }}</span>
+                                        </button>
+                                        <button class="btn btn-sm btn-outline-secondary vote-btn {% if user_votes|get_item:review.id == 'downvote' %}active{% endif %}" 
+                                                data-review-id="{{ review.id }}" data-vote-type="downvote" {% if not user.is_authenticated or review.user == user %}disabled{% endif %}>
+                                            <i class="fas fa-thumbs-down me-1"></i> 
+                                            <span class="downvote-count">{{ review.votes.filter(vote='downvote').count }}</span>
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        {% endfor %}
+                        
+                        <!-- Pagination -->
+                        {% if page_obj.has_other_pages %}
+                            <nav aria-label="Page navigation" class="mt-4">
+                                <ul class="pagination justify-content-center">
+                                    {% if page_obj.has_previous %}
+                                        <li class="page-item">
+                                            <a class="page-link" href="?{% query_transform request page=page_obj.previous_page_number %}" aria-label="Previous">
+                                                <span aria-hidden="true">&laquo;</span>
+                                            </a>
+                                        </li>
+                                    {% else %}
+                                        <li class="page-item disabled">
+                                            <a class="page-link" href="#" aria-label="Previous">
+                                                <span aria-hidden="true">&laquo;</span>
+                                            </a>
+                                        </li>
+                                    {% endif %}
+                                    
+                                    {% for num in page_obj.paginator.page_range %}
+                                        {% if page_obj.number == num %}
+                                            <li class="page-item active"><a class="page-link" href="?{% query_transform request page=num %}">{{ num }}</a></li>
+                                        {% elif num > page_obj.number|add:'-3' and num < page_obj.number|add:'3' %}
+                                            <li class="page-item"><a class="page-link" href="?{% query_transform request page=num %}">{{ num }}</a></li>
+                                        {% endif %}
+                                    {% endfor %}
+                                    
+                                    {% if page_obj.has_next %}
+                                        <li class="page-item">
+                                            <a class="page-link" href="?{% query_transform request page=page_obj.next_page_number %}" aria-label="Next">
+                                                <span aria-hidden="true">&raquo;</span>
+                                            </a>
+                                        </li>
+                                    {% else %}
+                                        <li class="page-item disabled">
+                                            <a class="page-link" href="#" aria-label="Next">
+                                                <span aria-hidden="true">&raquo;</span>
+                                            </a>
+                                        </li>
+                                    {% endif %}
+                                </ul>
+                            </nav>
+                        {% endif %}
+                        
+                    {% else %}
+                        <div class="text-center py-5">
+                            <i class="fas fa-comment-slash fa-4x text-muted mb-3"></i>
+                            <h5>No reviews found</h5>
+                            <p class="text-muted">There are no reviews for this product yet.</p>
+                            {% if user.is_authenticated %}
+                                <a href="{% url 'add_review' product.id %}" class="btn btn-primary mt-2">
+                                    <i class="fas fa-star me-1"></i> Be the first to review
+                                </a>
+                            {% endif %}
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    $(document).ready(function() {
+        // Auto-submit form when select changes
+        $('.filter-select').change(function() {
+            $('#filter-form').submit();
+        });
+        
+        // Auto-submit form when checkbox changes
+        $('.filter-checkbox').change(function() {
+            $('#filter-form').submit();
+        });
+        
+        // Handle review votes
+        $('.vote-btn').click(function() {
+            var $btn = $(this);
+            var reviewId = $btn.data('review-id');
+            var voteType = $btn.data('vote-type');
+            
+            $.ajax({
+                url: "{% url 'vote_review' %}",
+                type: "POST",
+                data: {
+                    'review_id': reviewId,
+                    'vote_type': voteType,
+                    'csrfmiddlewaretoken': "{{ csrf_token }}"
+                },
+                success: function(response) {
+                    if (response.status === 'success') {
+                        // Update vote counts
+                        $btn.closest('.review-item').find('.upvote-count').text(response.upvotes);
+                        $btn.closest('.review-item').find('.downvote-count').text(response.downvotes);
+                        
+                        // Toggle active state based on action
+                        if (response.action === 'added') {
+                            $btn.addClass('active');
+                            $btn.siblings('.vote-btn').removeClass('active');
+                        } else if (response.action === 'updated') {
+                            $btn.addClass('active');
+                            $btn.siblings('.vote-btn').removeClass('active');
+                        } else if (response.action === 'removed') {
+                            $btn.removeClass('active');
+                        }
+                    } else {
+                        alert(response.message);
+                    }
+                },
+                error: function() {
+                    alert('Error processing your vote. Please try again.');
+                }
+            });
+        });
+    });
+</script>
+{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/lightbox2/2.11.3/css/lightbox.min.css">
+<style>
+    .vote-btn.active {
+        background-color: #e3f2fd;
+        border-color: #0d6efd;
+        color: #0d6efd;
+    }
+</style>
+{% endblock %}
+
+{% block extra_js_bottom %}
+<script src="https://cdnjs.cloudflare.com/ajax/libs/lightbox2/2.11.3/js/lightbox.min.js"></script>
+{% endblock %}

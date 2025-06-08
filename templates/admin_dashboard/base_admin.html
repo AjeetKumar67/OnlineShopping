@@ -1,0 +1,190 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Admin Dashboard - Flipkart Clone{% endblock %}
+
+{% block extra_css %}
+<style>
+    .admin-sidebar {
+        background-color: #263238;
+        min-height: calc(100vh - 56px);
+        color: #fff;
+    }
+    
+    .admin-sidebar .nav-link {
+        color: rgba(255, 255, 255, 0.8);
+        padding: 0.8rem 1rem;
+        border-radius: 0;
+        font-weight: 500;
+    }
+    
+    .admin-sidebar .nav-link:hover {
+        color: #fff;
+        background-color: rgba(255, 255, 255, 0.1);
+    }
+    
+    .admin-sidebar .nav-link.active {
+        color: #fff;
+        background-color: var(--primary-color);
+    }
+    
+    .admin-sidebar .nav-link i {
+        margin-right: 10px;
+        width: 20px;
+        text-align: center;
+    }
+    
+    .admin-content {
+        padding: 20px;
+        background-color: #f8f9fa;
+        min-height: calc(100vh - 56px);
+    }
+    
+    .admin-card {
+        border-radius: 8px;
+        box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+        border: none;
+        transition: transform 0.3s;
+    }
+    
+    .admin-card:hover {
+        transform: translateY(-5px);
+    }
+    
+    .admin-card .card-header {
+        border-bottom: none;
+        font-weight: 600;
+        background-color: #fff;
+        border-radius: 8px 8px 0 0;
+    }
+    
+    .stat-card {
+        border-left: 4px solid var(--primary-color);
+    }
+    
+    .stat-card i {
+        font-size: 2rem;
+        color: var(--primary-color);
+    }
+    
+    .orders-card {
+        border-left: 4px solid #ff9800;
+    }
+    
+    .orders-card i {
+        color: #ff9800;
+    }
+    
+    .products-card {
+        border-left: 4px solid #4caf50;
+    }
+    
+    .products-card i {
+        color: #4caf50;
+    }
+    
+    .users-card {
+        border-left: 4px solid #f44336;
+    }
+    
+    .users-card i {
+        color: #f44336;
+    }
+    
+    .table-responsive {
+        border-radius: 8px;
+        overflow: hidden;
+    }
+    
+    .admin-table thead th {
+        background-color: #f8f9fa;
+        font-weight: 600;
+        border-top: none;
+    }
+    
+    .admin-table td {
+        vertical-align: middle;
+    }
+    
+    .admin-form .form-control,
+    .admin-form .form-select {
+        border-radius: 4px;
+        padding: 10px 15px;
+    }
+    
+    .admin-form label {
+        font-weight: 500;
+    }
+    
+    .filter-card {
+        border-radius: 8px;
+        box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+        margin-bottom: 20px;
+    }
+    
+    .filter-card .card-header {
+        font-weight: 600;
+        background-color: #f8f9fa;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row">
+        <!-- Sidebar -->
+        <div class="col-md-3 col-lg-2 admin-sidebar p-0">
+            <div class="d-flex flex-column p-3">
+                <h5 class="text-center mb-4">Admin Dashboard</h5>
+                <ul class="nav flex-column">
+                    <li class="nav-item">
+                        <a class="nav-link {% if request.resolver_match.url_name == 'admin_dashboard' %}active{% endif %}" href="{% url 'admin_dashboard' %}">
+                            <i class="fas fa-tachometer-alt"></i> Dashboard
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link {% if request.resolver_match.url_name == 'admin_products' %}active{% endif %}" href="{% url 'admin_products' %}">
+                            <i class="fas fa-box"></i> Products
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link {% if request.resolver_match.url_name == 'admin_orders' %}active{% endif %}" href="{% url 'admin_orders' %}">
+                            <i class="fas fa-shopping-cart"></i> Orders
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link {% if request.resolver_match.url_name == 'admin_users' %}active{% endif %}" href="{% url 'admin_users' %}">
+                            <i class="fas fa-users"></i> Users
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link {% if request.resolver_match.url_name == 'admin_reports' %}active{% endif %}" href="{% url 'admin_reports' %}">
+                            <i class="fas fa-chart-bar"></i> Reports
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link {% if request.resolver_match.url_name == 'admin_settings' %}active{% endif %}" href="{% url 'admin_settings' %}">
+                            <i class="fas fa-cog"></i> Settings
+                        </a>
+                    </li>
+                    <li class="nav-item mt-4">
+                        <a class="nav-link" href="{% url 'home' %}">
+                            <i class="fas fa-arrow-left"></i> Back to Site
+                        </a>
+                    </li>
+                </ul>
+            </div>
+        </div>
+        
+        <!-- Main Content -->
+        <div class="col-md-9 col-lg-10 admin-content">
+            {% block admin_content %}{% endblock %}
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+{% block admin_js %}{% endblock %}
+{% endblock %}

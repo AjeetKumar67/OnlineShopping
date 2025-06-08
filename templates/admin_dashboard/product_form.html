@@ -1,0 +1,160 @@
+{% extends 'admin_dashboard/base_admin.html' %}
+{% load crispy_forms_tags %}
+
+{% block admin_content %}
+<div class="container-fluid">
+    <!-- Header -->
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h3>{{ title }}</h3>
+        <div>
+            <a href="{% url 'admin_products' %}" class="btn btn-outline-secondary">
+                <i class="fas fa-arrow-left me-2"></i> Back to Products
+            </a>
+        </div>
+    </div>
+    
+    <!-- Product Form -->
+    <div class="card admin-card">
+        <div class="card-header">
+            <h5 class="mb-0">Product Information</h5>
+        </div>
+        <div class="card-body">
+            <form method="post" enctype="multipart/form-data" class="admin-form">
+                {% csrf_token %}
+                
+                <div class="row">
+                    <div class="col-lg-6">
+                        <h5 class="mb-3">Basic Information</h5>
+                        
+                        {{ form.title|as_crispy_field }}
+                        
+                        <div class="row">
+                            <div class="col-md-6">
+                                {{ form.category|as_crispy_field }}
+                            </div>
+                            <div class="col-md-6">
+                                {{ form.subcategory|as_crispy_field }}
+                            </div>
+                        </div>
+                        
+                        {{ form.brand|as_crispy_field }}
+                        {{ form.description|as_crispy_field }}
+                    </div>
+                    
+                    <div class="col-lg-6">
+                        <h5 class="mb-3">Pricing & Inventory</h5>
+                        
+                        <div class="row">
+                            <div class="col-md-6">
+                                {{ form.price|as_crispy_field }}
+                            </div>
+                            <div class="col-md-6">
+                                {{ form.discount_price|as_crispy_field }}
+                            </div>
+                        </div>
+                        
+                        {{ form.stock|as_crispy_field }}
+                        {{ form.specifications|as_crispy_field }}
+                        
+                        <div class="row">
+                            <div class="col-md-6">
+                                {{ form.is_available|as_crispy_field }}
+                            </div>
+                            <div class="col-md-6">
+                                {{ form.is_featured|as_crispy_field }}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <hr>
+                
+                <!-- Image Upload Section -->
+                <h5 class="mb-3">Product Images</h5>
+                
+                {{ formset.management_form }}
+                
+                <div class="row image-formset">
+                    {% for image_form in formset %}
+                    <div class="col-md-3 mb-3 formset-row">
+                        <div class="card h-100">
+                            <div class="card-body">
+                                {{ image_form.id }}
+                                
+                                <div class="mb-3">
+                                    <label for="{{ image_form.image.id_for_label }}" class="form-label">Image</label>
+                                    {{ image_form.image }}
+                                    {% if image_form.instance.image %}
+                                    <div class="mt-2">
+                                        <img src="{{ image_form.instance.image.url }}" alt="Product Image" class="img-thumbnail" style="max-height: 100px;">
+                                    </div>
+                                    {% endif %}
+                                </div>
+                                
+                                <div class="form-check">
+                                    {{ image_form.is_primary }}
+                                    <label class="form-check-label" for="{{ image_form.is_primary.id_for_label }}">
+                                        Primary Image
+                                    </label>
+                                </div>
+                                
+                                {% if image_form.instance.pk %}
+                                <div class="mt-2">
+                                    {{ image_form.DELETE }}
+                                    <label class="form-check-label text-danger" for="{{ image_form.DELETE.id_for_label }}">
+                                        Delete this image
+                                    </label>
+                                </div>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+                
+                <div class="d-flex justify-content-end mt-4">
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fas fa-save me-2"></i> Save Product
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block admin_js %}
+<script>
+    // Dependent dropdown for subcategories
+    $(document).ready(function() {
+        $('#id_category').change(function() {
+            var categoryId = $(this).val();
+            
+            if (categoryId) {
+                $.ajax({
+                    url: "{% url 'get_subcategories' %}",
+                    data: {
+                        'category_id': categoryId
+                    },
+                    dataType: 'json',
+                    success: function(data) {
+                        $('#id_subcategory').empty();
+                        $.each(data, function(key, value) {
+                            $('#id_subcategory').append('<option value="' + key + '">' + value + '</option>');
+                        });
+                    }
+                });
+            } else {
+                $('#id_subcategory').empty();
+            }
+        });
+        
+        // Handle primary image selection (only one can be selected)
+        $('.image-formset').on('change', 'input[type=checkbox][name$=is_primary]', function() {
+            if($(this).prop('checked')) {
+                $('input[type=checkbox][name$=is_primary]').not(this).prop('checked', false);
+            }
+        });
+    });
+</script>
+{% endblock %}
